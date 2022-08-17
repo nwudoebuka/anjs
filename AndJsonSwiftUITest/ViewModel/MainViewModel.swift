@@ -9,21 +9,10 @@ import Foundation
 import CoreData
 import UIKit
 
-enum EventsViewModelState {
-    case EventsViewModelDidStartRetrievingItems
-    case EventsViewModelDidFailToRetrieveItems
-    case EventsViewModelDidEndRetrievingItems
-}
-
-protocol EventsViewModelDelegate{
-    func EventsViewModelDidTransitionToState(model: MainViewModel, state: EventsViewModelState)
-}
-
 final class MainViewModel: ObservableObject  {
-    @Published var tableData:[Event]?
+    @Published var tableData:[Event]? = []
     @Published var mainData:[Event]?
     private var apiLoader: ServiceProtocol?
-    public var delegate:EventsViewModelDelegate?
     var eventList: [EventModel]?
     var errorMessage: String?
     required init(apiLoader: ServiceProtocol = Service()) {
@@ -32,7 +21,6 @@ final class MainViewModel: ObservableObject  {
     }
     
     public func getEvents() {
-        delegate?.EventsViewModelDidTransitionToState(model: self, state: .EventsViewModelDidStartRetrievingItems)
         apiLoader?.getEvents(completion: { [weak self] result in
             guard let self = self else {
                 return
@@ -42,21 +30,28 @@ final class MainViewModel: ObservableObject  {
             case .success(let response):
              
               self.eventList = response.children
-              
-              var children = self.eventList?.map { $0.children }
-              let childrenFlat = children?.flatMap { $0 }.compactMap{ $0 }
-              let eventList = childrenFlat.map{$0.map{$0.events}.flatMap { $0 }.compactMap{ $0 }}
-              self.tableData = eventList
+              self.recursion(response: response)
               self.mainData = self.tableData
-              self.delegate?.EventsViewModelDidTransitionToState(model: self, state: .EventsViewModelDidEndRetrievingItems)
             case .failure(let failure):
               debugPrint("failed viewmodel \(failure)")
               self.errorMessage = failure.localizedDescription
-              self.delegate?.EventsViewModelDidTransitionToState(model: self, state: .EventsViewModelDidFailToRetrieveItems)
            
             }
         })
     }
     
+  private func recursion(response: EventModel){
+  
+    if !response.events.isEmpty{
+      tableData?.append(contentsOf: response.events)
+      debugPrint("recursive table data is \(tableData)")
+      return
+    }
+    for child in response.children{
+      
+      recursion(response: child)
+    }
+  }
+  
 
 }

@@ -30,11 +30,9 @@ final class Service:ServiceProtocol {
               }
           } catch {
                // handle error
-            debugPrint("saw get events error \(error)")
             completion(.failure(JsonError.badPayload(message:errorMessages.jsonDefault)))
           }
     }else{
-      debugPrint("saw get events error first")
       completion(.failure(JsonError.badPayload(message:errorMessages.jsonDefault)))
     }
     

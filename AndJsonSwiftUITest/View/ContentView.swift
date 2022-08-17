@@ -9,10 +9,8 @@ import SwiftUI
 
 struct ContentView: View {
   @ObservedObject var viewModel = MainViewModel()
-
   @State var city: String = ""
   @State var price: String = ""
-  @State var price2: String = ""
     var body: some View {
         NavigationView {
           VStack{
@@ -25,12 +23,17 @@ struct ContentView: View {
                        .frame(height: 40)
             Divider().padding(.horizontal, 10)
             Button(action: {
-            // Closure will be called once user taps your button
                     filterCityAndPrice()
-                     debugPrint("search items are \(city) and \(price)")
                    }) {
                      Text("Search")
                    }
+            Button(action: {
+              price.removeAll()
+              city.removeAll()
+              filterCityAndPrice()
+                   }) {
+                     Text("Clear")
+                   }.padding(.top, 20)
             List {
               ForEach(viewModel.tableData ?? [Event]()) { item in
                   HStack{
@@ -41,7 +44,7 @@ struct ContentView: View {
                         .font(.system(size: 12))
                     }
                     Spacer()
-                    Text("#\(item.price)")
+                    Text("$ \(item.price)")
                   }
                    
                 }
@@ -62,7 +65,7 @@ struct ContentView: View {
     if !self.price.isEmpty && !self.city.isEmpty{
         // filter both
       viewModel.tableData = tabDataToBeFiltered.filter {
-        $0.city.contains(self.city) && String($0.price).contains(self.price)
+        $0.city.lowercased().contains(self.city.lowercased()) && String($0.price).contains(self.price)
         }
     }else if !self.price.isEmpty{
         // filter only price
@@ -72,7 +75,7 @@ struct ContentView: View {
     }else  if !self.city.isEmpty{
         // filter only city
       viewModel.tableData = tabDataToBeFiltered.filter {
-        $0.city.contains(self.city)
+        $0.city.lowercased().contains(self.city.lowercased())
         }
       }
   }
@@ -84,12 +87,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }
-
-
-
-//extension String: Identifiable {
-//    public typealias ID = Int
-//    public var id: Int {
-//        return hash
-//    }
-//}
